@@ -4,9 +4,14 @@ library(dplyr)
 
 source("/../xgboost_eval.GALAXY.R")
 
+#load xgboost models (output of XGboost_train)
+xgboost.Fibrosis1<-readRDS("/../../xgboost.Fibrosis1.rds")
+xgboost.Fibrosis2<-readRDS("/../../xgboost.Fibrosis2.rds")
+xgboost.Inflammation<-readRDS("/../../xgboost.Inflammation.rds")
+xgboost.Inflammation<-readRDS("/../../xgboost.Inflammation.rds")
 
 
-# Evaluate models with top 15 features
+# Evaluate models
 F1.bestmodels <- xgboost_eval(xgboost.object = xgboost.Fibrosis1, top = 15)
 F2.bestmodels <- xgboost_eval(xgboost.object = xgboost.Fibrosis2, top = 15)
 Inflammation.bestmodels <- xgboost_eval(xgboost.object = xgboost.Inflammation, top = 15)
