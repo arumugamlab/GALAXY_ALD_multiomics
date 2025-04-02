@@ -1,21 +1,20 @@
 
 
-source("/projects/arumugam/people/xhf865/Camila/GALAXY/GALA/xgboost/R_manuscript/Final/Cleaned/Github/xgboost_eval.GALAXY.R")
+source("/../../xgboost_eval.GALAXY.R")
 
 # Load test dataset
-df.matrix.test<-readRDS("/projects/arumugam/people/xhf865/Camila/GALAXY/GALA/xgboost/data/df.matrix.test.2.rds")
+df.matrix.test<-readRDS("/../../df.matrix.test.rds")
 
 # Load test metadata
 
-metadata<-as.data.frame(fread("/projects/arumugam/people/xhf865/Camila/GALAXY/GALA/xgboost/data/Camila_test_data.2025.csv"))
+metadata<-as.data.frame(fread("/../../Camila_test_data.2025.csv"))
 row.names(metadata)<-metadata$SampleID
 
 # Load best models (Result from xgboost best model selection)
-
-bestmodels.filt.AUC<-readRDS("/projects/arumugam/people/xhf865/Camila/GALAXY/GALA/xgboost/data/data.updated/bestmodels.AUC.NoPrepross.2025.2.rds")
+bestmodels.filt.AUC<-readRDS("/../..//bestmodels.filt.AUC")
 
 # Load trained XGBoost model (Result from xgboost_train)
-xgboost.Fibrosis1<-readRDS("/projects/arumugam/people/xhf865/Camila/GALAXY/GALA/xgboost/data/data.updated/xgboost.Fibrosis1_ALD.NOprepro.2025.2.rds")
+xgboost.Fibrosis1<-readRDS("/../xgboost.Fibrosis1")
 
 
 # Select features of interest from test metadata
