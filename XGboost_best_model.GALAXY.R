@@ -2,7 +2,7 @@
 
 library(dplyr)
 
-source("/projects/arumugam/people/xhf865/Camila/GALAXY/GALA/xgboost/R_manuscript/Final/Cleaned/Github/xgboost_eval.GALAXY.R")
+source("/../xgboost_eval.GALAXY.R")
 
 
 
