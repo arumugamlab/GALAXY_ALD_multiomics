@@ -1,0 +1,521 @@
+---
+title: "Performance of ALD biomarkers as a function of prevalence rate"
+output: html_document
+date: "2024-10-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Define some functions for biomarker evaluation
+
+
+## Estimate metrics from truth table
+
+```{r calculate_metrics}
+
+calculate_metrics <- function(TP, TN, FP, FN, metrics = c("FPR", "FNR", "PPV", "NPV", "PSI", "NNP", "NND")) {
+
+    df = data.frame(matrix(ncol = length(metrics) + 1, nrow = 0))
+    
+    # Calculate PPV and NPV
+    PPV = TP / (TP + FP)  # Positive Predictive Value
+    NPV = TN / (TN + FN)  # Negative Predictive Value
+    
+    # Calculate Sensitivity and Specificity
+    TPR = TP / (TP + FN)  # True Positive Rate
+    TNR = TN / (TN + FP)  # True Negative Rate
+    FPR = 1 - TNR
+    FNR = 1 - TPR
+    
+    # Derive NNX
+    PSI = PPV + NPV - 1
+    NNP = 1/PSI
+    J   = TPR + TNR - 1
+    NND = 1/J
+    
+    # Print the metrics
+    #metrics = c("P", "TP", "FN", "N", "TN", "FP")
+    #cat(paste0("PREV: ", sprintf("%.4f", prevalence), "; ", paste(metrics, sprintf("%.4f", sapply(metrics, function(x) get(x))), sep = ": ", collapse = "; "), "\n"))
+    df = rbind(df, as.vector(sapply(metrics, function(x) get(x))))
+
+    names(df) = c(metrics)
+    #print(df)
+    return(df)
+}
+```
+
+## Given TPR and TNR, create truth table and call $calculate_metrics$ above for given population size and prevalence
+
+```{r estimate_performance}
+estimate_performance <- function(TPR, TNR, prevalence, n_pop = 1e6, metrics = c("FPR", "FNR", "PPV", "NPV", "PSI", "NNP", "NND")) {
+
+    df = data.frame(matrix(ncol = length(metrics), nrow = 0))
+    
+    P = round(n_pop*prevalence)  # Actual Positives
+    N = n_pop - P  # Actual Negatives
+    
+    # Confusion matrix values
+    TP = round(TPR*P)  # True Positives
+    TN = round(TNR*N)  # True Negatives
+    FN = P - TP  # False Positives
+    FP = N - TN  # False Negatives
+    
+    df = calculate_metrics(TP, TN, FP, FN, metrics=metrics)
+    df$PREVALENCE = prevalence
+    #print(df)
+    return(df)
+}
+```
+
+
+## Given TPR and TNR, calculate metrics for a range of prevalences
+
+```{r simulate_estimate}
+simulate_estimate <- function(panel, TPR, TNR, n_pop = 1e6, maxp = 0.5, metrics = c("FPR", "FNR", "PPV", "NPV", "PSI", "NNP", "NND")) {
+
+    # Number of estimated NNPs for regression
+    N = 60
+    
+    # Arithmetic series
+    
+    Astart = 0.10
+    Aend = maxp
+    
+    prev_a = seq(from = Astart, to = Aend, length.out = N)
+    
+    # Geometric series
+    
+    Gstart = 1e-4
+    Gend = 0.1
+    # 1e-3 to 0.5, in 20 steps
+    # multiplier = (0.5/1e-3)^(1/20) = 1.364421
+    Gmult = (Gend/Gstart)^(1/N)
+    prev_g = Gstart*Gmult^(0:(N-1))
+    
+    # Merge series or pick one
+    spectrum = c(prev_g, prev_a)
+    #spectrum = prev_g
+    
+    df = data.frame(matrix(ncol = length(metrics) + 1, nrow = 0))
+    
+    #spectrum = c(1e-3, 1e-2, 1e-1, 5e-1)
+    df = NULL
+    for (prevalence in spectrum) {
+      if (is.null(df)) {
+        df = estimate_performance(TPR, TNR, prevalence, n_pop, metrics=metrics)
+      } else {
+        df = rbind(df, estimate_performance(TPR, TNR, prevalence, n_pop, metrics=metrics))
+      }
+    }
+    df$Panel = panel
+    #print(df)
+    return(df)
+}
+
+```
+
+## Helper functions for plotting the trends
+
+```{r plotting-helpers}
+
+# Interpolate the NNP value at specific values
+interpolate_values <- function(df, panel, prevalence, metric="NNP", MAX_P=0.5) {
+  df2 = df %>% filter(Panel == panel)
+  #print(df)
+  #print(paste("filtering for ", panel))
+  #print(df2)
+  a = approx(df2[["PREVALENCE"]], df2[[metric]], xout = prevalence)
+  ret = c(as.numeric(a$x), as.numeric(a$y))
+  #print(ret)
+  return(ret)
+}
+
+# Function to calculate the 95% confidence interval using percentiles
+calculate_ci_nonparametric <- function(data, metric) {
+  lower <- quantile(data[[metric]], 0.025)
+  upper <- quantile(data[[metric]], 0.975)
+  data.frame(
+    Panel = data$Panel[1],
+    PREVALENCE = data$PREVALENCE[1],
+    CI_lower = lower,
+    CI_upper = upper
+  )
+}
+
+# Function to calculate the 95% confidence interval using SD
+calculate_ci <- function(data, metric) {
+  mean_metric = mean(data[[metric]])
+  ci <- 1.96 * sd(data[[metric]]) / sqrt(nrow(data))
+  data.frame(
+    PREVALENCE = data$PREVALENCE[1],
+    Panel = data$Panel[1],
+    CI_lower = mean_metric - ci,
+    CI_upper = mean_metric + ci,
+    CI_mean  = mean_metric
+  )
+}
+```
+
+## Actual function plotting the trends
+
+```{r plotting}
+# Make a list of ggplot objects
+plot_metric_trends <- function(performances, plot_targets, prevalences=NULL, primary_prevalence=NULL, secondary_prevalence=NULL, metric="NNP", Y_MAX=20, MAX_P=0.5, draw_cv_ci=0) {
+
+    tasks = unique(performances$phenotype)
+    
+    # Plot the trends
+    plots = list()
+    for (task in tasks) {
+        my_maxp = MAX_P
+        study_prevalence = NA
+        if (!is.null(prevalences)) {
+          x = prevalences %>%
+            filter(phenotype == task & set == 'test')
+          study_prevalence = x$Prevalence
+          my_maxp = max(MAX_P, ceiling(study_prevalence*10)/10)
+        }
+        
+        ####################
+        # Test performances
+        ####################
+        
+        test_params = performances %>%
+                        filter(phenotype == task & set == 'test') %>%
+                        select(Panel, TPR, TNR)
+        test_df = do.call(rbind, pmap(list(test_params$Panel, test_params$TPR, as.numeric(test_params$TNR)), function(x, y, z) simulate_estimate(x, y, z, maxp=my_maxp)))
+
+        y_max = ceiling(max(test_df[[metric]]))
+        if (y_max > Y_MAX) {
+            y_max = Y_MAX
+        }
+
+        # Add singe or two stage
+        test_df$PanelType = ifelse(grepl("==> TE", test_df$Panel), "With TE followup", "Standalone test")
+
+        ####################
+        # CV performances
+        ####################
+        # Add CV information
+        if (draw_cv_ci == 1) {
+            cv_params = performances %>%
+                          filter(phenotype == task & set == 'CV') %>%
+                          select(Panel, TPR, TNR)
+            
+            # Use purrr::pmap to iterate over each row and call simulate_estimate
+            result_list = pmap(list(cv_params$Panel, cv_params$TPR, as.numeric(cv_params$TNR)), function(x, y, z) simulate_estimate(x, y, z, maxp=my_maxp))
+            
+            # Combine the results into a single data.frame
+            cv_df = bind_rows(result_list)
+            
+            
+            # Calculate the confidence intervals
+            ci_df = cv_df %>%
+              group_by(Panel, PREVALENCE) %>%
+              do(calculate_ci(., metric)) %>%
+              ungroup()
+    
+            # Merge test performance and CV confidence intervals
+            df = test_df %>%
+                    inner_join(ci_df, by = c("Panel", "PREVALENCE"))
+            
+            #######################
+            # What are we plotting?
+            #######################
+
+            df = df %>%
+                  mutate(!!sym(metric) := CI_mean)
+        } else {
+          df = test_df
+          df$CI_lower = 0
+          df$CI_upper = 5
+        }
+        
+        # Create the plot
+
+        # Legend for linetype only if there are multiple test types
+        if (length(unique(df$PanelType)) > 1) {
+            plot = ggplot(df, aes(x = PREVALENCE,
+                              y = get(metric),
+                              ymin = CI_lower,
+                              ymax = CI_upper,
+                              linetype = PanelType)
+                          ) +
+                        labs(title = task,
+                             x = "Prevalence",
+                             y = metric,
+                             color = "Biomarker panel",
+                             linetype = "Test type"
+                          ) +
+                        scale_linetype_manual(values = c("With TE followup" = "solid",
+                                                         "Standalone test" = "dashed"))
+        } else {
+            plot = ggplot(df, aes(x = PREVALENCE,
+                              y = get(metric),
+                              ymin = CI_lower,
+                              ymax = CI_upper)
+                          ) +
+                        labs(title = task,
+                             x = "Prevalence",
+                             y = metric,
+                             color = "Biomarker panel"
+                             )
+        }
+        
+        # Add other elements
+
+        plot = plot + 
+                    geom_line(aes(color = gsub(" ==> TE", "", Panel))) +
+                    scale_color_manual(values = myColors) +
+                    scale_fill_manual(values = myColors) +
+                    theme_pubr() +
+                    theme(
+                      legend.position = c(0.74, 0.95),  # Position in the top right corner
+                      # 0.74,0.95 for NNP-diagnostics
+                      legend.justification = c("right", "top"),  # Align the legend box
+                      legend.background = element_blank(),  # Box around the legend
+                      legend.box.background = element_rect(color = "black"),  # Box around the legend box
+                      legend.text = element_text(size = 8)  # Reduce the font size
+                    ) +
+                    ylim(0, y_max)
+        
+        if (draw_cv_ci == 1) {
+          plot = plot + geom_ribbon(aes(fill = gsub(" ==> TE", "", Panel)), color = NA, alpha = 0.2, show.legend = FALSE)
+
+        }
+        
+        # Add vertical lines for prevalences
+        # Also mark what should be interpolation target
+        interpolation_target = NULL
+        if (!is.null(prevalences)) {
+            plot = plot + geom_vline(xintercept = study_prevalence,
+                                    linetype = "dotted",
+                                    color = "#08519c"
+                                    ) +
+                          annotate("text",
+                                   x = study_prevalence,
+                                   y = min(Y_MAX, max(df[[metric]])),
+                                   label = paste0("This study (", 100*round(study_prevalence, 3), "%)"),
+                                   color = "#08519c",
+                                   angle = 90,
+                                   vjust = -0.5, hjust = 1.0
+                           )
+            interpolation_target = study_prevalence
+        }
+        # secondary is plotted before primary, because we want primary to have preference for showing interpolated values
+        if (!is.null(secondary_prevalence) && !is.na(secondary_prevalence[[task]])) {
+            plot = plot + geom_vline(xintercept = secondary_prevalence[[task]],
+                                     linetype = "dotted",
+                                     color = "#3182bd"
+                                     ) + 
+                          annotate("text",
+                                   x = secondary_prevalence[[task]],
+                                   y = min(Y_MAX, max(df[[metric]])),
+                                   label = paste0("Secondary care (", 100*round(secondary_prevalence[[task]], 3), "%)"),
+                                   color = "#3182bd",
+                                   angle = 90,
+                                   vjust = -0.5, hjust = 1.0
+                                   )
+            interpolation_target = primary_prevalence[[task]]
+        }
+        if (!is.null(primary_prevalence) && !is.na(primary_prevalence[[task]])) {
+            plot = plot + geom_vline(xintercept = primary_prevalence[[task]],
+                                     linetype = "dotted",
+                                     color = "#6baed6"
+                                     ) + 
+                          annotate("text",
+                                   x = primary_prevalence[[task]],
+                                   y = min(Y_MAX, max(df[[metric]])),
+                                   label = paste0("Primary care (", 100*round(primary_prevalence[[task]], 3), "%)"),
+                                   color = "#6baed6",
+                                   angle = 90,
+                                   vjust = -0.5, hjust = 1.0
+                                   )
+            interpolation_target = primary_prevalence[[task]]
+        }
+        
+        # Mark interpolated values for specific panels
+        x = sapply(plot_targets[[task]], function(target) interpolate_values(df, panel=target, interpolation_target, metric=metric))
+        interpolated = data.frame(x)
+        row.names(interpolated) = c("x", "y")
+        names(interpolated) = plot_targets[[task]]
+        # Reorder based on 'y'
+        interpolated = interpolated[, order(as.numeric(interpolated["y", ]), decreasing = TRUE)]
+        
+        vjustx = c(-0.2, -0.1, 1.1, 1.2, rep(1.2, 10))
+        hjustx = c(-0.2, 1.2, 1.2, -0.2, rep(-0.2, 10))
+        for (i in 1:length(names(interpolated))) {
+            target = names(interpolated)[i]
+            x1 = interpolated[[target]][1]
+            y1 = interpolated[[target]][2]
+            plot = plot + annotate("point", x = x1, y = y1, color = myColors[[gsub(" ==> TE", "", target)]])
+            plot = plot + annotate("text", x = x1, y = y1, label = round(y1, 2), color = myColors[[gsub(" ==> TE", "", target)]], vjust = vjustx[i], hjust = hjustx[i])
+        }
+        
+        plots[[task]] = plot
+    }
+    
+    return(plots)
+    
+}
+
+```
+
+# Read in performance and prevalence rates and choose the biomarker panels to plot
+
+```{r prepare-data}
+library(dplyr)
+library(stringr)
+
+panel_replace = c("Plasma extra-cellular matrix" = "Plasma ECM proteins",
+                  "Host-microbial multi-omics" = "Full multi-omics",
+                  "Te-reference" = " Gold standard",
+                  "Blep-reference" = " Gold standard",
+                  "Ast-reference" = " Gold standard",
+                  "Gold-standard (blep)" = " Gold standard",
+                  "Gold-standard (ast)" = " Gold standard",
+                  "Gold-standard (te >=8)" = " Gold standard",
+                  "Gold-standard (te >=12)" = " Gold standard",
+                  "Plasma proteomics" = "Plasma proteins",
+                  "Plasma lipidomics" = "Plasma lipids",
+                  "Plasma metabolomics" = "Plasma metabolites")
+pheno_replace = c("S>=2" = "Steatosis",
+                  "S>=1" = "Steatosis",
+                  "I>=2" = "Inflammation",
+                  "F>=2" = "Mild fibrosis",
+                  "F>=3" = "Advanced fibrosis")
+
+prevalences   = read.csv("prevalences.txt", header=TRUE, sep="\t", fill=TRUE) %>%
+                  mutate(Prevalence = Disease/Total)
+
+performances = read.csv("performances.txt", header=TRUE, sep="\t", fill=TRUE)
+performances = performances %>%
+                  mutate(phenotype = str_replace_all(phenotype, fixed(pheno_replace))) %>%
+                  mutate(omic.name = str_to_sentence(omic.name)) %>%
+                  mutate(Panel := str_replace_all(omic.name, fixed(panel_replace))) %>%
+                  filter(! Panel %in% c("Host multi-omics"))
+  
+# Fake 'set' column for newer tables from Camila
+performances$set = "test"
+
+# Step 1: Filter the data.frame
+top_nnp_df = performances %>%
+                filter(set == "test" & TNR > 0) %>%
+                filter(NNP > 0) %>%
+                arrange(NNP) %>%
+                group_by(phenotype) %>%
+                slice_head(n = 4) %>%
+                ungroup()
+
+# Step 2: Filter the data.frame for specific panels
+specific_panels_df_1 = performances %>%
+                        filter(Panel %in% c("Plasma proteins", "Clinical features") & set == "test" & TNR > 0)
+specific_panels_df_2 = performances %>%
+                        filter(Panel %in% c(" Gold standard") & set == "test" & TNR > 0)
+specific_panels_df_3 = performances %>%
+                        filter(Panel %in% c("Plasma metabolomics") & phenotype == 'Advanced fibrosis' & set == "test" & TNR > 0)
+
+# Combine the two data.frames and remove duplicates
+combined_df = bind_rows(top_nnp_df, specific_panels_df_1, specific_panels_df_2, specific_panels_df_3) %>%
+                distinct()
+
+# Step 3: Select unique pairs of 'phenotype' and 'panel'
+unique_pairs = combined_df %>%
+                  select(phenotype, Panel) %>%
+                  distinct() %>%
+                  mutate(Panel = ifelse(phenotype == "Advanced fibrosis" & Panel == "Plasma targeted-metabolomics", "Plasma lipids", Panel))
+
+# Step 4: Subset the entire data.frame to keep only these pairs
+performances = performances %>%
+                  semi_join(unique_pairs, by = c("phenotype", "Panel"))
+
+```
+
+## Plot the biomarker panels
+
+Also ssign target primary and secondary care prevalences to highlight in the plot.
+
+```{r diagnosis-test, fig.height=5.66, fig.width=8}
+# Load ggplot2
+library(ggplot2)
+library(ggpubr)
+library(scales)
+library(RColorBrewer)
+library(cowplot)
+
+primary_prevalence = list("Inflammation" = 0.20,
+                       "Mild fibrosis" = 0.15,
+                       "Advanced fibrosis" = 0.03,
+                       "Steatosis" = 0.30
+                      )
+secondary_prevalence = list("Inflammation" = NA,
+                       "Mild fibrosis" = 0.40,
+                       "Advanced fibrosis" = 0.20,
+                       "Steatosis" = NA
+                      )
+
+
+# Get the default ggplot2 color palette
+panels = c("Plasma cytokines", "Clinical features", " Gold standard", "Full multi-omics", "Plasma lipids", "Plasma proteins", "Plasma metabolites")
+myColors = brewer.pal(length(panels), "Dark2")  # Choose a palette and number of colors
+names(myColors) = panels  # Assign names to the colors
+
+# values to be highlighted
+plot_targets = list(
+                    "Mild fibrosis" = c("Full multi-omics", "Plasma cytokines", " Gold standard"),
+                    "Advanced fibrosis" = c("Clinical features", "Plasma proteins", " Gold standard", "Plasma lipids"),
+                    "Inflammation" = c("Full multi-omics", "Plasma cytokines", " Gold standard"),
+                    "Steatosis" = c("Plasma cytokines", "Plasma proteins", "Plasma metabolites", " Gold standard")
+                    )
+
+
+# Make the actual plots
+metric = "NNP"
+plots = plot_metric_trends(performances, plot_targets=plot_targets, prevalences=prevalences, primary_prevalence=primary_prevalence, secondary_prevalence=secondary_prevalence, Y_MAX=20, MAX_P=0.5, metric=metric)
+merged_plot = plot_grid(plots[["Steatosis"]], plots[["Inflammation"]], plots[["Mild fibrosis"]], plots[["Advanced fibrosis"]], ncol = 2, nrow = 2)
+ggsave(paste("Figure4", metric, "pdf", sep="."), plot=merged_plot, height=1.7*8/1.618, width=1.7*8, units="in", dpi=300)
+
+```
+
+
+## Plot two-stage diagnosis for mild fibrosis
+
+```{r diagnosis-two-stage, fig.asp=21/29.7, fig.width=6}
+# Load ggplot2
+library(ggplot2)
+library(scales)
+library(dplyr)
+library(RColorBrewer)
+library(cowplot)
+
+prevalences2   = read.csv("two_stage_prevalences.txt", header=TRUE, sep="\t", fill=TRUE) %>%
+                  mutate(Prevalence = Disease/Total)
+
+performances2 = read.csv("two_stage_performances.txt", header=TRUE, sep=",", fill=TRUE)
+performances2 = performances2 %>%
+                  mutate(phenotype = str_replace_all(phenotype, pheno_replace)) %>%
+                  mutate(Panel := str_replace_all(omic.name, panel_replace)) %>%
+                  filter(! Panel %in% c("Host multi-omics"))
+
+primary_prevalence2 = list("Mild fibrosis" = 0.15,
+                        "Advanced fibrosis" = 0.03
+                       )
+
+panels = c("Plasma cytokines", "x", "x", "Full multi-omics", "x", "Plasma proteins", "x", "FIB-4")
+myColors = brewer.pal(length(panels), "Dark2")  # Choose a palette and number of colors
+names(myColors) = panels  # Assign names to the colors
+
+plot_targets = list(
+                    #"Advanced fibrosis" = c("Clinical features", "Plasma proteomics", "TE-optimized"),
+                    "Mild fibrosis" = c("Full multi-omics ==> TE", "Plasma cytokines ==> TE", "FIB-4 ==> TE", "FIB-4")
+                    )
+
+# Make the actual plots
+plots = plot_metric_trends(performances2, plot_targets=plot_targets, prevalences=prevalences2, primary_prevalence=primary_prevalence2, secondary_prevalence=NULL, Y_MAX=20, MAX_P=0.5)
+
+ggsave("FigureS14.pdf", plot=plots[["Mild fibrosis"]], height=8/1.618, width=8, units="in", dpi=300)
+
+```
+

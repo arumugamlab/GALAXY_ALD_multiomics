@@ -1,0 +1,2 @@
+phenotype	set	Health	Disease	Total
+Mild fibrosis	test	37	26	63

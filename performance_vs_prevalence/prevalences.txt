@@ -1,0 +1,9 @@
+phenotype	set	Health	Disease	Total
+Steatosis	test	27	32	59
+Steatosis	CV	23	29	52
+Inflammation	test	28	31	59
+Inflammation	CV	24	29	53
+Mild fibrosis	test	44	34	78
+Mild fibrosis	CV	34	27	61
+Advanced fibrosis	test	64	14	78
+Advanced fibrosis	CV	54	13	67
