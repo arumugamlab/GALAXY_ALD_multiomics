@@ -1,3 +1,5 @@
+# Author: Camila Alvarez-Silva
+
 xgboost_eval <- function(xgboost.object, top) {
   
   # Function to generate performance plots for an XGBoost model
