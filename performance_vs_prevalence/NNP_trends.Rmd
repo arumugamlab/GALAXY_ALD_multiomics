@@ -384,7 +384,7 @@ panel_replace = c("Plasma extra-cellular matrix" = "Plasma ECM proteins",
 pheno_replace = c("S>=2" = "Steatosis",
                   "S>=1" = "Steatosis",
                   "I>=2" = "Inflammation",
-                  "F>=2" = "Mild fibrosis",
+                  "F>=2" = "Significant fibrosis",
                   "F>=3" = "Advanced fibrosis")
 
 prevalences   = read.csv("prevalences.txt", header=TRUE, sep="\t", fill=TRUE) %>%
@@ -446,12 +446,12 @@ library(RColorBrewer)
 library(cowplot)
 
 primary_prevalence = list("Inflammation" = 0.20,
-                       "Mild fibrosis" = 0.15,
+                       "Significant fibrosis" = 0.15,
                        "Advanced fibrosis" = 0.03,
                        "Steatosis" = 0.30
                       )
 secondary_prevalence = list("Inflammation" = NA,
-                       "Mild fibrosis" = 0.40,
+                       "Significant fibrosis" = 0.40,
                        "Advanced fibrosis" = 0.20,
                        "Steatosis" = NA
                       )
@@ -464,7 +464,7 @@ names(myColors) = panels  # Assign names to the colors
 
 # values to be highlighted
 plot_targets = list(
-                    "Mild fibrosis" = c("Full multi-omics", "Plasma cytokines", " Gold standard"),
+                    "Significant fibrosis" = c("Full multi-omics", "Plasma cytokines", " Gold standard"),
                     "Advanced fibrosis" = c("Clinical features", "Plasma proteins", " Gold standard", "Plasma lipids"),
                     "Inflammation" = c("Full multi-omics", "Plasma cytokines", " Gold standard"),
                     "Steatosis" = c("Plasma cytokines", "Plasma proteins", "Plasma metabolites", " Gold standard")
@@ -474,7 +474,7 @@ plot_targets = list(
 # Make the actual plots
 metric = "NNP"
 plots = plot_metric_trends(performances, plot_targets=plot_targets, prevalences=prevalences, primary_prevalence=primary_prevalence, secondary_prevalence=secondary_prevalence, Y_MAX=20, MAX_P=0.5, metric=metric)
-merged_plot = plot_grid(plots[["Steatosis"]], plots[["Inflammation"]], plots[["Mild fibrosis"]], plots[["Advanced fibrosis"]], ncol = 2, nrow = 2)
+merged_plot = plot_grid(plots[["Steatosis"]], plots[["Inflammation"]], plots[["Significant fibrosis"]], plots[["Advanced fibrosis"]], ncol = 2, nrow = 2)
 ggsave(paste("Figure4", metric, "pdf", sep="."), plot=merged_plot, height=1.7*8/1.618, width=1.7*8, units="in", dpi=300)
 
 ```
@@ -499,7 +499,7 @@ performances2 = performances2 %>%
                   mutate(Panel := str_replace_all(omic.name, panel_replace)) %>%
                   filter(! Panel %in% c("Host multi-omics"))
 
-primary_prevalence2 = list("Mild fibrosis" = 0.15,
+primary_prevalence2 = list("Significant fibrosis" = 0.15,
                         "Advanced fibrosis" = 0.03
                        )
 
@@ -509,13 +509,13 @@ names(myColors) = panels  # Assign names to the colors
 
 plot_targets = list(
                     #"Advanced fibrosis" = c("Clinical features", "Plasma proteomics", "TE-optimized"),
-                    "Mild fibrosis" = c("Full multi-omics ==> TE", "Plasma cytokines ==> TE", "FIB-4 ==> TE", "FIB-4")
+                    "Significant fibrosis" = c("Full multi-omics ==> TE", "Plasma cytokines ==> TE", "FIB-4 ==> TE", "FIB-4")
                     )
 
 # Make the actual plots
 plots = plot_metric_trends(performances2, plot_targets=plot_targets, prevalences=prevalences2, primary_prevalence=primary_prevalence2, secondary_prevalence=NULL, Y_MAX=20, MAX_P=0.5)
 
-ggsave("FigureS14.pdf", plot=plots[["Mild fibrosis"]], height=8/1.618, width=8, units="in", dpi=300)
+ggsave("FigureS14.pdf", plot=plots[["Significant fibrosis"]], height=8/1.618, width=8, units="in", dpi=300)
 
 ```
 
