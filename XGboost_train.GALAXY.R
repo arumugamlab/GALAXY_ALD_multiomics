@@ -1,3 +1,5 @@
+# Author: Camila Alvarez-Silva
+
 library(dplyr)
 library(xgboost)
 library(caret)
