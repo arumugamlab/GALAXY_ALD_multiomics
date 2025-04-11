@@ -331,6 +331,7 @@ install.packages(c("tidyverse", "data.table", "survival"))
 | Folder | Description |
 |--------|-------------|
 | `data/omic_data/` | Data matrix (TSV format) for omics datasets (e.g., cytokines, SNPs, microbiome) |
+
 Each file is expected to:
 - Have samples in rows (sample IDs as rownames)
 - Have omic features in columns
@@ -346,6 +347,7 @@ Each file is expected to:
 | Folder | File Format | Description |
 |--------|-------------|-------------|
 | `out/cox_regression/` | `.tsv` | One file per input omics dataset per outcome tested |
+
 Each file contains:
 | Column | Description |
 |--------|-------------|
@@ -368,6 +370,7 @@ install.packages(c("tidyverse", "mlr", "survival", "glmnet", "rsample", "data.ta
 | Folder | Description |
 |--------|-------------|
 | `data/omic_data/` | Data matrix (tsv format) for omics datasets (e.g., cytokines, SNPs, microbiome) |
+
 Each file is expected to:
 - Have samples in rows (sample IDs as rownames)
 - Have features in columns.
@@ -395,7 +398,6 @@ Each file includes:
 | `cindex_fold` | C-index per fold and feature number (data frame) |
 | `feature_rank` | Feature rankings per CV repetition and fold |
 | `res` | Prediction results per fold and feature subset |
-
 
 # 5. Summarize feature selection results for prognostic models
 
@@ -450,6 +452,7 @@ install.packages(c("tidyverse", "survival", "glmnet"))
 | Location | Description |
 |----------|-------------|
 | `out/prognostic_model/*.rds` | Full model objects from `construct_prognostic_model.R` |
+
 Each file contains:
 - Predicted survival scores (`res`)
 - Fold assignments (`rep`, `fold`)
