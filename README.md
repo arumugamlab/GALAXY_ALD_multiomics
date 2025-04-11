@@ -430,7 +430,7 @@ All outputs are saved to: `out/rds/`
 
 # 6. Evaluation of prognostic models in the GALA-ALD
 
-This script evaluates the performance of prognostic models trained using omics data from the GALA-ALD cohort. It compares both:
+We use `evaluate_prognostic_model.R` to evaluates the performance of prognostic models trained using omics data from the GALA-ALD cohort. It compares both:
 - Full models using **all features**
 - Reduced models using **selected top features** (based on cross-validated C-index)
 
