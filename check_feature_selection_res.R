@@ -19,7 +19,7 @@ for(file in files){
   res <- read_rds(file)
   
   ## C-index in each iteration of feature selection
-  temp.res <- res[[8]] %>% group_by(feat_num) %>% summarise(m = mean(cindex, na.rm = T)) %>% arrange(-m) %>% data.frame()
+  temp.res <- res$cindex_per_featnum %>% group_by(feat_num) %>% summarise(m = mean(cindex, na.rm = T)) %>% arrange(-m) %>% data.frame()
   m.max <- temp.res$m %>% max(na.rm = T)
   
   ## Identify highest number of features keeping 99% of cindex 
@@ -35,17 +35,17 @@ for(file in files){
   }
   
   ## Check selected features
-  temp <- res[[8]] %>% filter(feat_num == best.num) %>% arrange(-cindex)
+  temp <- res$cindex_per_featnum %>% filter(feat_num == best.num) %>% arrange(-cindex)
   best.i <- temp$i[1]
   best.j <- temp$j[1]
   
-  feat.list <- res[[9]][[best.i]][[best.j]]
+  feat.list <- res$feature_list[[best.i]][[best.j]]
   feat.list[1:best.num] %>% print()
 
   cindex <- temp.res$m[1] ## mean cindex of the best num
-  res.max <- res[[8]] %>% filter(feat_num == best.num) %>% arrange(-cindex) %>% head(1)
+  res.max <- res$cindex_per_featnum %>% filter(feat_num == best.num) %>% arrange(-cindex) %>% head(1)
   
-  feat.list <- res[[9]][[res.max$i]][[res.max$j]]
+  feat.list <- res$feature_list[[res.max$i]][[res.max$j]]
   feat.list <- feat.list[1:res.max$feat_num]
 
   ## Save c-index with the best features  
@@ -57,7 +57,7 @@ for(file in files){
   df.feat <- rbind(df.feat, temp)
   
   ## Save c-index of each iteration with the best features
-  c.error <- res[[8]] %>% filter(feat_num == best.num) %>% group_by(feat_num, i) %>% summarise(m = mean(cindex))
+  c.error <- res$cindex_per_featnum %>% filter(feat_num == best.num) %>% group_by(feat_num, i) %>% summarise(m = mean(cindex))
   temp <- data.frame(omics = omics, cindex = c.error$m, best_num = best.num, outcome = outcome)  
   df.error <- rbind(df.error, temp)
 }

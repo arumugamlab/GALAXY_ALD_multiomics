@@ -115,17 +115,18 @@ my_cv <- function(d, surv, data, type){
   lrn.ranger = makeLearner("surv.ranger")
   task = makeSurvTask(data = d2, target = c("day", "cond"))
   fullmodel = mlr::train(lrn.ranger, task)
-  
-  res[[1]] <- pred.mean
-  res[[2]] <- glmnet::Cindex(pred.mean, surv)
-  res[[3]] <- fullmodel
-  res[[4]] <- surv
-  res[[5]] <- d
-  res[[6]] <- d2  
-  res[[7]] <- c
-  res[[8]] <- cindex.feat.df
-  res[[9]] <- feat.list
-  res[[10]] <- all_df
+
+  res <- list(
+    pred_mean <- pred.mean,
+    cindex_mean <- glmnet::Cindex(pred.mean, surv),
+    full_model <- fullmodel,
+    surv_object <- surv,
+    input_data <- d,
+    input_data_w_surv <- d2,
+    cindex_per_featnum <- cindex.feat.df,
+    feature_list <- feat.list,
+    prediction_df <- all_df
+  )
   
   output <- paste0("out/prognostic_model/", data, ".", type, ".rds")
   saveRDS(res, file = output)

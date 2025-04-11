@@ -87,7 +87,7 @@ for(file in files){
   model_res <- read_rds(file)
   
   ## Extract predictions for full models (i.e., all features)
-  df <- model_res[[10]]
+  df <- model_res$prediction_df
   df <- df %>% filter(fs == "all")
 
   res <- c()
@@ -154,7 +154,7 @@ for(file in files){
   ## Get the best number of features selected for this omic-outcome combination
   d.best <- d.best_feat %>% filter(omics == file.omics & outcome == file.outcome)
   
-  df <- model_res[[10]]
+  df <- model_res$prediction_df
   df <- df %>% filter(fs == d.best$best_num)
   
   f <- 1

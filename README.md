@@ -389,15 +389,15 @@ All output is saved in: `out/prognostic_model/`
 Each file includes:
 | List Index | Content |
 |------------|---------|
-| `predicted_score` | Mean predicted risk score per sample across CV |
-| `cindex` | C-index using the mean prediction |
-| `model` | Full trained model (`mlr` object) |
-| `surv` | Survival object used (`Surv`) |
-| `d` | Original feature matrix (`d`) |
-| `d2` | Modified matrix with `day` and `cond` (`d2`) |
-| `cindex_fold` | C-index per fold and feature number (data frame) |
-| `feature_rank` | Feature rankings per CV repetition and fold |
-| `res` | Prediction results per fold and feature subset |
+| `pred_mean` | Mean predicted risk score per sample across CV |
+| `cindex_mean` | C-index using the mean prediction |
+| `full_model` | Full trained model (`mlr` object) |
+| `surv_object` | Survival object used (`Surv`) |
+| `input_data` | Original feature matrix (`d`) |
+| `input_data_w_surv` | Modified matrix with `day` and `cond` (`d2`) |
+| `cindex_per_featnum` | C-index per fold and feature number (data frame) |
+| `feature_list` | Feature rankings per CV repetition and fold |
+| `prediction_df` | Prediction results per fold and feature subset |
 
 # 5. Summarize feature selection results for prognostic models
 
