@@ -314,3 +314,172 @@ install.packages(c( "Metrics", "dplyr"))
 ## Output
 - A structured validation of the best models based on AUC.
 - Final dataset (`bestmodels.filt`) containing optimal models for fibrosis, inflammation, and steatosis and its performance on the holdout test set.
+
+
+# 3. Cox regression analysis in the GALA-ALD
+
+To investigates the association between omics features and clinical outcomes of ALD patients (decompensation, mortality, and infection), we perform Cox proportional hazards regression analysis using `cox_regression.R`.
+
+### Dependencies
+
+```r
+install.packages(c("tidyverse", "data.table", "survival"))
+```
+
+### Inputs
+
+| Folder | Description |
+|--------|-------------|
+| `data/omic_data/` | Data matrix (TSV format) for omics datasets (e.g., cytokines, SNPs, microbiome) |
+Each file is expected to:
+- Have samples in rows (sample IDs as rownames)
+- Have omic features in columns
+
+### ️Analysis Overview
+
+- Cox regression is run for **each feature** in each omics dataset.
+- Each model is adjusted using clinical confounders from `GALA_ALD.confounder.rds`.
+- The outcomes (decompensation, all-cause mortality, and infection) are tested separately.
+
+### Outputs
+
+| Folder | File Format | Description |
+|--------|-------------|-------------|
+| `out/cox_regression/` | `.tsv` | One file per input omics dataset per outcome tested |
+Each file contains:
+| Column | Description |
+|--------|-------------|
+| `name` | Feature name |
+| `hz`   | Estimated hazard ratio |
+| `p`    | p-value of the feature in the Cox model |
+| `outcome` | Outcome type (decompensation, mortality, infection) |
+
+# 4. Prognostic model construction for clinical outcomes in the GALA-ALD cohort
+
+To construct prediction models for the clinical outcomes in the GALA-ALD, we employ randomforest model in the `mlr` package and make models using `construct_prognostic_model.R`.
+
+### Dependencies
+```r
+install.packages(c("tidyverse", "mlr", "survival", "glmnet", "rsample", "data.table"))
+```
+
+### Inputs
+
+| Folder | Description |
+|--------|-------------|
+| `data/omic_data/` | Data matrix (tsv format) for omics datasets (e.g., cytokines, SNPs, microbiome) |
+Each file is expected to:
+- Have samples in rows (sample IDs as rownames)
+- Have features in columns.
+
+
+### ️ Analysis Workflow
+**Model Construction**  
+- Repeated 5x5-fold cross-validation using `mlr::surv.ranger`
+- Feature selection based on permutation importance
+- C-index calculated for each model
+
+### Outputs
+
+All output is saved in: `out/prognostic_model/`
+
+Each file includes:
+| List Index | Content |
+|------------|---------|
+| `predicted_score` | Mean predicted risk score per sample across CV |
+| `cindex` | C-index using the mean prediction |
+| `model` | Full trained model (`mlr` object) |
+| `surv` | Survival object used (`Surv`) |
+| `d` | Original feature matrix (`d`) |
+| `d2` | Modified matrix with `day` and `cond` (`d2`) |
+| `cindex_fold` | C-index per fold and feature number (data frame) |
+| `feature_rank` | Feature rankings per CV repetition and fold |
+| `res` | Prediction results per fold and feature subset |
+
+
+# 5. Summarize feature selection results for prognostic models
+
+This script, `check_feature_selection_res.R`, summarizes the results of feature selection from prognostic survival models constructed using `construct_prognostic_model.R`. It identifies the smallest number of features that retain at least 99% of the best model performance (based on mean C-index), and extracts the corresponding feature names and performance metrics.
+
+### Dependencies
+```r
+install.packages(c("tidyverse"))
+```
+
+### Inputs
+
+| Location | Description |
+|----------|-------------|
+| `out/prognostic_model/*.rds` | Output from `construct_prognostic_model.R` containing full model results for each omics and outcome |
+
+Each model `.rds` file is expected to contain:
+- `cindex_fold`: C-index results for different feature numbers across CV folds
+- `feature_rank`: Selected feature lists per fold
+
+### Outputs
+
+All outputs are saved to: `out/rds/`
+
+| File | Description |
+|------|-------------|
+| `selected_feature.rds` | Data frame listing selected feature names for each omics-outcome combination, along with best fold identifiers (`i`, `j`) |
+| `df.selected_feature.rds` | Summary table with best number of features and corresponding mean C-index |
+
+
+# 6. Evaluation of prognostic models in the GALA-ALD
+
+This script evaluates the performance of prognostic models trained using omics data from the GALA-ALD cohort. It compares both:
+- Full models using **all features**
+- Reduced models using **selected top features** (based on cross-validated C-index)
+
+Evaluation metrics include:
+- Concordance Index (C-index)
+- Time-dependent AUC (1, 3, 5 years)
+- Net Reclassification Index (NRI)
+
+### Dependencies
+```r
+install.packages(c("tidyverse", "survival", "glmnet"))
+# Use Bioconductor or remotes for:
+# timeROC: https://cran.r-project.org/package=timeROC
+# nricens: https://cran.r-project.org/package=nricens
+```
+
+### Inputs
+### 1. Model Results
+| Location | Description |
+|----------|-------------|
+| `out/prognostic_model/*.rds` | Full model objects from `construct_prognostic_model.R` |
+Each file contains:
+- Predicted survival scores (`res`)
+- Fold assignments (`rep`, `fold`)
+- Feature set used (`fs = "all"` or selected number)
+
+### 2. Metadata
+| File | Description |
+|------|-------------|
+| `data/metadata/GALA_ALD.marker.rds` | Metadata table including `sampleID` used to link predictions to survival outcome |
+
+### 3. Selected Feature Summary
+| File | Description |
+|------|-------------|
+| `out/rds/selected_feature.rds` | Identifies best feature set for each omics-outcome pair (used for reduced model evaluation) |
+
+### Outputs
+
+All results are saved in: `out/`
+
+| File | Description |
+|------|-------------|
+| `evaluation_metrics.full_model_with_each_repetition.rds / .tsv` | Metrics for full models using all features |
+| `evaluation_metrics.reduced_model_with_each_repetition.rds / .tsv` | Metrics for reduced models using selected features |
+
+Each file contains:
+
+| Column | Description |
+|--------|-------------|
+| `omics` | Data type (e.g., cytokines, SNPs) |
+| `outcome` | Clinical outcome (decompensation, all-cause mortality, and infection) |
+| `rep` | Repetition index (1 to 5) |
+| `Cindex`, `AUC.xyr`, `NRI.xyr`, `n_total` | Evaluation metrics |
+| `best_num` | (Reduced model only) Number of selected features |
