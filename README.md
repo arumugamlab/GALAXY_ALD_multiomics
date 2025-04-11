@@ -330,7 +330,7 @@ install.packages(c("tidyverse", "data.table", "survival"))
 
 | Folder | Description |
 |--------|-------------|
-| `data/omic_data/` | Data matrix (TSV format) for omics datasets (e.g., cytokines, SNPs, microbiome) |
+| `data/omic_data/` | Data matrix (tsv format) for omics datasets (e.g., cytokines, SNPs, microbiome) |
 
 Each file is expected to:
 - Have samples in rows (sample IDs as rownames)
