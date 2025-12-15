@@ -7,3 +7,5 @@ Significant fibrosis,Plasma cytokines,test,33.3,4.8,54,7.9,21,3,34,5,63,0.8077,0
 Significant fibrosis,Plasma cytokines ==> TE,test,27,3.2,55.6,14.3,17,2,35,9,63,0.6538,0.9459
 Significant fibrosis,Full multi-omics,test,31.7,6.3,52.4,9.5,20,4,33,6,63,0.7692,0.8919
 Significant fibrosis,Full multi-omics ==> TE,test,27,4.8,54,14.3,17,3,34,9,63,0.6538,0.9189
+Significant fibrosis,Host multi-omics,test,34.9,4.8,54,6.3,22,3,34,4,63,0.8462,0.9189
+Significant fibrosis,Host multi-omics ==> TE,test,30.2,4.8,54,11.1,19,3,34,7,63,0.7308,0.9189
