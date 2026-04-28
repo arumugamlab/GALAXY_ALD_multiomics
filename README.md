@@ -194,6 +194,8 @@ The function performs the following steps:
 
 ### Dependencies
 
+**Runtime:** Elapsed time: 29.77 s (user: 28.75 s, system: 0.77 s)
+
 Ensure these packages are installed:
 
 ```r
