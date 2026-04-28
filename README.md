@@ -194,7 +194,7 @@ The function performs the following steps:
 
 ### Dependencies
 
-**Runtime:** Elapsed time: 29.77 s (user: 28.75 s, system: 0.77 s)
+**Runtime:** Elapsed time: 26.61 s (user: 25.65 s, system: 0.37 s)
 
 Ensure these packages are installed:
 
@@ -220,6 +220,7 @@ result <- xgboost_train(
 )
 
 # Generate performance plots for top 10 features
+result$panel <- "F>=2"
 Result.plots <- xgboost_eval(xgboost.object = result, top = 10)
 
 # Access AUC plot
