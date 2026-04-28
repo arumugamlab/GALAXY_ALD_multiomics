@@ -6,9 +6,9 @@ This R function `lin_reg_associate()` perform association analysis between omics
 
 **Function used to generate Figure 1 and Table S3**.
 
-### Dependencies
-
 **Runtime:** 32.35 seconds (elapsed), 31.55 user, 0.60 system
+
+### Dependencies
 
 Ensure these packages are installed:
 
@@ -61,9 +61,9 @@ We use the [XGBoost](https://doi.org/10.1145/2939672.2939785) machine learning a
 
 This R function implements an XGBoost-based classification pipeline, including feature reduction and performance evaluation via cross-validation. It supports multiple omics datasets and outputs a range of performance metrics and model details.
 
-### Dependencies
-
 **Runtime:** 55.1 minutes (elapsed wall time), using ~104 CPU hours  (user: 103.1 h, system: 0.75 h). Parallel execution.
+
+### Dependencies
 
 Ensure these packages are installed:
 
@@ -115,6 +115,7 @@ The function returns a list of outputs covering model performance, predictions, 
 | `train.labels.ID.out`           | List (Vectors) | Training set sample IDs per fold. |
 | `val.labels.ID.out`             | List (Vectors) | Validation set sample IDs per fold. |
 
+
 ### Example Usage
 
 ```r
@@ -139,16 +140,15 @@ result$feature.importance.list # Feature importance for full models
 result$feature.importance.list.top # Feature importance for top models
 ```
 
-
 ## Evaluating a trained XGBoost model with `xgboost_eval()`
 
 ### Overview
 
 This R function  `xgboost_eval()` generates performance plots for a trained XGBoost model and outputs relevant performance metrics and visualizations.
 
-### Dependencies
-
 **Runtime:** Elapsed time: 26.61 s (user: 25.65 s, system: 0.37 s)
+
+### Dependencies
 
 Ensure these packages are installed:
 
@@ -237,6 +237,7 @@ This workflow evaluates XGBoost feature-reduced models across the four clinical 
 
 **Function used to generate data needed for Figure S4-S9 and table S5**.
 
+**Runtime:** 3.08 min (185.09 s elapsed; user: 172.68 s, system: 11.39 s)
 
 ### Dependencies
 
@@ -276,7 +277,6 @@ install.packages(c("dplyr", "stringr", "reshape2", "ggplot2", "ggrepel", "patchw
 | `topFeatures.bestmodel.summary` | Summary of selected models|
 
 
-
 ## Evaluating optimal features-reduced model on the holdout test set with 'XGboost_validation()'
 
 ## Overview
@@ -284,6 +284,15 @@ This workflow validates the previously selected  feature-reduced  models for **s
 
 **Runtime:** Elapsed time: 30.51 s (wall time), using ~9.5 minutes of CPU time 
 (user: 564.92 s, system: 4.16 s). Parallel execution.
+
+### Dependencies
+
+- Ensure to source `xgboost_eval.GALAXY.R` for model evaluation.
+- Ensure these packages are installed:
+
+```r
+install.packages(c( "Metrics", "dplyr"))
+```
 
 ## Workflow
 1. **Load Required Functions**  
@@ -323,16 +332,6 @@ This workflow validates the previously selected  feature-reduced  models for **s
 | `bestmodels.filt` | Dataframe| Filtered best models with validation AUC |
 
 
-### Dependencies
-
-- Ensure to source `xgboost_eval.GALAXY.R` for model evaluation.
-- Ensure these packages are installed:
-
-```r
-install.packages(c( "Metrics", "dplyr"))
-```
-
-
 ## Usage
 1. Ensure the `xgboost_eval.GALAXY.R` script is available.
 2. Load the required datasets.
@@ -341,7 +340,6 @@ install.packages(c( "Metrics", "dplyr"))
 ## Output
 - A structured validation of the best models based on AUC.
 - Final dataset (`bestmodels.filt`) containing optimal models for fibrosis, inflammation, and steatosis and its performance on the holdout test set.
-
 
 # 3. Cox regression analysis in the GALA-ALD
 
@@ -541,3 +539,5 @@ Each file contains:
 | caret          | 7.0-1     |
 | pROC           | 1.19.0.1  |
 | Metrics        | 0.1.4     |
+| groupdata2     | 2.0.5     |
+| xpectr         | 0.4.4     |
