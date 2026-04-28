@@ -235,6 +235,9 @@ result$AUC.top.feature.curve
 
 This workflow evaluates XGBoost feature-reduced models across the four clinical panels related to liver disease:**steatosis**, **inflammation**, **moderate fibrosis** and  **advanced fibrosis**. The objective is to identify the optimal number of features, selecting the model that used the fewest number of features while preserving at least 99% of the maximum average AUC.
 
+**Function used to generate data needed for Figure S4-S9 and table S5**.
+
+
 ### Dependencies
 
 Ensure these packages are installed:
@@ -260,7 +263,7 @@ install.packages(c("dplyr", "stringr", "reshape2", "ggplot2", "ggrepel", "patchw
 |------------------------|------------------------------------------------------------------|
 | `best.auc.list`        | Nested list of models meeting ≥99% AUC and minimum feature number|
 | `best.auc.df`          | Final dataframe with most efficient models per condition         |
-
+| `best.auc.df`          | Final dataframe with most efficient models per condition         |
 
 ##  Final Output Format (`best.auc.df`)
 
@@ -270,7 +273,7 @@ install.packages(c("dplyr", "stringr", "reshape2", "ggplot2", "ggrepel", "patchw
 | `AUC.cv`      | Cross-validated AUC                         |
 | `sd`          | Standard deviation of AUC                   |
 | `panel`       | Clinical condition panel  (i.e.S>=1,I>=2,F>=2, F>=3 )|
-| `no.features` | Number of features used                     |
+| `topFeatures.bestmodel.summary` | Summary of selected models|
 
 
 
