@@ -8,6 +8,8 @@ This R function `lin_reg_associate()` perform association analysis between omics
 
 ### Dependencies
 
+-Runtime: 32.35 seconds (elapsed), 31.55 user, 0.60 system
+
 Ensure these packages are installed:
 
 ```r
