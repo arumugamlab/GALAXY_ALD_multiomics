@@ -1,5 +1,3 @@
-# Author: Camila Alvarez-Silva
-
 xgboost_eval <- function(xgboost.object, top) {
   
   # Function to generate performance plots for an XGBoost model
@@ -41,7 +39,7 @@ xgboost_eval <- function(xgboost.object, top) {
   cvAUC.df$L1 <- factor(cvAUC.df$L1, levels = cvAUC.df$L1)
   
   # Compute standard deviation of AUC values
-  cvAUC.list <- xgboost.object$cvAUC.list.all    
+  cvAUC.list <- xgboost.object$cvAUC.list.all   #xgboost.object$cvAUC.list.all 
   sdAUC.val.df <- data.frame(L1 = names(cvAUC.list), sd = NA)
   
   
@@ -73,24 +71,25 @@ xgboost_eval <- function(xgboost.object, top) {
   
   # Process and plot AUC across each  top feature models 
   
-  top.df <- data.frame(omic = names(xgboost.object$cvAUC.list.top), top = NA)
+  top.df <- data.frame(omic = names(xgboost.object$cvAUC.list.top.all), top = NA)
+  rownames(top.df)<-top.df$omic
   
-  for (j in 1:length(names(xgboost.object$cvAUC.list.top))) {
-    top.n <- (length(xgboost.object$cvAUC.list.top[[j]]) + 1)
+  for (j in names(xgboost.object$cvAUC.list.top.all)) {
+    top.n <- (length(xgboost.object$cvAUC.list.top.all[[j]]) + 1)
     
-    top.df$top[j] <- top.n
+    top.df[j,2] <- top.n
   }
   
   top.max <- top.df$omic[which(top.df$top == top)]
   
   for (j in 1:(top - 1)) {
-    cvAUC.df.top <- data.frame(omic = names(xgboost.object$cvAUC.list.top), AUC = NA, sd = NA)
-    
-    for (i in 1:length(names(xgboost.object$cvAUC.list.top))) {
-      omi <- names(xgboost.object$cvAUC.list.top)[i]
+    cvAUC.df.top <- data.frame(omic = names(xgboost.object$cvAUC.list.top.all), AUC = NA, sd = NA)
+    rownames(cvAUC.df.top)<-cvAUC.df.top$omic
+    for (i in names(xgboost.object$cvAUC.list.top)) {
+      omi <- i
       
       if (omi %in% top.max) {
-        cvAUC.list <- xgboost.object$cvAUC.list.top[[i]][[j]]
+        cvAUC.list <- xgboost.object$cvAUC.list.top.all[[i]][[j]]
         
         if (!anyNA(cvAUC.list)) {
           AUC.top <- cvAUC.list$cvAUC$cvAUC
@@ -125,7 +124,7 @@ xgboost_eval <- function(xgboost.object, top) {
         cvAUC.df.top.list[[features]] <- cvAUC.df.top
       } else {
         omi <- names(xgboost.object$cvAUC.list.top)[i]
-        top.n <- top.df$top[i]
+        top.n <- top.df[i,2]
         if (j <= (top.n - 1)) {
           cvAUC.list <- xgboost.object$cvAUC.list.top[[i]][[j]]
           
@@ -170,19 +169,19 @@ xgboost_eval <- function(xgboost.object, top) {
   
   cvAUC.list <- list()
   
-  for (j in 1:length(names(xgboost.object$cvAUC.list.top))) {
-    top <- (length(xgboost.object$cvAUC.list.top[[j]]) + 1)
+  for (j in names(xgboost.object$cvAUC.list.top.all)) {
+    top <- (length(xgboost.object$cvAUC.list.top.all[[j]]) + 1)
     
     for (i in 1:(top - 1)) {
-      cvAUC.df <- xgboost.object$cvAUC.list.top[[j]][[i]]
+      cvAUC.df <- xgboost.object$cvAUC.list.top.all[[j]][[i]]
       if (!anyNA(cvAUC.df)) {
         n.folds <- length(cvAUC.df$cvAUC$fold.AUC)
         
         cvAUC.df.top <- data.frame(omic = rep(NA, n.folds), features = rep(NA, n.folds), AUC = rep(NA, n.folds), AUC.cv = rep(NA, n.folds), sd = rep(NA, n.folds))
-        feature <- names(xgboost.object$cvAUC.list.top[[j]][i])
-        omic <- names(xgboost.object$cvAUC.list.top[j])
+        feature <- names(xgboost.object$cvAUC.list.top.all[[j]][i])
+        omic <- names(xgboost.object$cvAUC.list.top.all[j])
         
-        cvAUC.df <- xgboost.object$cvAUC.list.top[[j]][[i]]
+        cvAUC.df <- xgboost.object$cvAUC.list.top.all[[j]][[i]]
         
         AUC.top <- cvAUC.df$cvAUC$fold.AUC
         sdAUC.val <- sd(AUC.top)
@@ -354,20 +353,133 @@ xgboost_eval <- function(xgboost.object, top) {
   }
   
   
+  # ---------------------------------------------------------------------------
+  # --- Optimal Feature-Reduced Model Selection (>= 99% of max AUC) ----------
+  # ---------------------------------------------------------------------------
+  #
+  # Starting from AUC.all.melt (AUC.all.top), identifies the most parsimonious
+  # model per panel x omic combination whose average AUC is >= 99% of the
+  # maximum average AUC observed for that group.
+  #
+  # Inputs (from upstream steps):
+  #   AUC.all.melt : melted data frame produced from cvAUC.df.top.list;
+  #                  columns include omic, AUC, sd, L1 (feature level), omic.feature
+  #
+  # Outputs:
+  #   best.auc.list : nested list [[panel]][[omic]] of the optimal model row(s)
+  #   best.auc.df   : final data frame – one row per panel x omic, columns:
+  #                     omic, AUC.cv, sd, panel, no.features
+  # ---------------------------------------------------------------------------
+  
+  # Work from AUC.all.melt (exported as AUC.all.top); rename for clarity
+  bestmodels <- AUC.all.melt
+  
+  # Remove rows with missing AUC values
+  bestmodels <- bestmodels %>% filter(!is.na(AUC))
+  bestmodels$AUC <- round(bestmodels$AUC, 2)
+  bestmodels$sd  <- round(bestmodels$sd,  2)
+  
+  # Rename columns for clarity
+  colnames(bestmodels)[colnames(bestmodels) == "AUC"] <- "AUC.cv"
+  colnames(bestmodels)[colnames(bestmodels) == "L1"]  <- "features"
+  
+  # Derive numeric feature count from "top.X" labels
+  bestmodels$no.features <- as.numeric(str_remove_all(bestmodels$features, "top\\."))
+  
+  # NOTE: AUC.all.melt does not carry a 'panel' column at this stage.
+  # A 'panel' column is added here as a placeholder so the nested list
+  # structure [[panel]][[omic]] is preserved. When xgboost_eval() is called
+  # per clinical panel (steatosis, inflammation, fibrosis >=2, fibrosis >=3)
+  # the caller should set xgboost.object$panel before passing in, or the
+  # panel label can be injected by the wrapper script (xgboost_best_model).
+  if (!is.null(xgboost.object$panel)) {
+    bestmodels$panel <- xgboost.object$panel
+  } else {
+    bestmodels$panel <- "unknown"
+  }
+  
+  # --- Step 1: find max AUC.cv per panel x omic and candidate features -------
+  bestmodels.auc <- bestmodels %>%
+    group_by(panel, omic) %>%
+    dplyr::summarise(
+      max.AUC.cv = max(AUC.cv),
+      features   = features[which(AUC.cv == max(AUC.cv))],
+      .groups    = "drop"
+    )
+  
+  # Numeric feature count from "top.X" labels
+  bestmodels.auc$no.features <- as.numeric(str_remove_all(bestmodels.auc$features, "top\\."))
+  
+  # --- Step 2: keep only the model with the fewest features at max AUC -------
+  bestmodels.auc.filt <- bestmodels.auc %>%
+    group_by(panel, omic) %>%
+    dplyr::filter(no.features == min(no.features)) %>%
+    dplyr::ungroup()
+  
+  # --- Step 3: compute 99% threshold per panel x omic row -------------------
+  bestmodels.auc.filt$AV.99 <- round(bestmodels.auc.filt$max.AUC.cv * 0.99, 2)
+  
+  # --- Step 4: build best.auc.list -------------------------------------------
+  best.auc.list <- list()
+  
+  for (i in 1:nrow(bestmodels.auc.filt)) {
+    
+    df    <- bestmodels.auc.filt[i, ]
+    panel <- df$panel
+    omic  <- as.character(df$omic)
+    
+    # Filter original data for the current panel and omic
+    df.filt <- bestmodels %>%
+      dplyr::filter(panel == df$panel & omic == df$omic)
+    
+    # Keep only rows with AUC.cv >= 99% of the maximum AUC.cv
+    df.filt2 <- df.filt %>%
+      dplyr::filter(AUC.cv >= df$AV.99)
+    
+    # Among those, keep only the rows with the minimum number of features
+    df.filt2 <- df.filt2 %>%
+      dplyr::filter(no.features == min(no.features))
+    
+    # Store in nested list [[panel]][[omic]]
+    best.auc.list[[panel]][[omic]] <- df.filt2
+  }
+  
+  # --- Step 5: flatten to best.auc.df ----------------------------------------
+  best.auc.df <- do.call(rbind, lapply(names(best.auc.list), function(p) {
+    do.call(rbind, lapply(names(best.auc.list[[p]]), function(o) {
+      row <- best.auc.list[[p]][[o]]
+      data.frame(
+        omic        = o,
+        AUC.cv      = row$AUC.cv,
+        sd          = row$sd,
+        panel       = p,
+        no.features = row$no.features,
+        stringsAsFactors = FALSE
+      )
+    }))
+  }))
+  
+  rownames(best.auc.df) <- NULL
+  
+  
+  # ---------------------------------------------------------------------------
   # Return results
+  # ---------------------------------------------------------------------------
   
   to.return <- list(
-    plot.complete = plot.complete,
-    AUC.top.feature.curve = AUC.top.feature,
-    plot.AUC.all.feature.reduced = plot.AUC.all,
-    AUC.barplot.all.omics = AUC.barplot.all.omics,
-    confusionMatrix.best.model = confusionMatrix.list,
-    bestModel = bestModel,
-    topFeatures.list = topFeatures.list,
+    plot.complete                  = plot.complete,
+    AUC.top.feature.curve          = AUC.top.feature,
+    plot.AUC.all.feature.reduced   = plot.AUC.all,
+    AUC.barplot.all.omics          = AUC.barplot.all.omics,
+    confusionMatrix.best.model     = confusionMatrix.list,
+    bestModel                      = bestModel,
+    topFeatures.list               = topFeatures.list,
     AUC.barplot.omics.all.bestmodels = AUC.barplot.omics.all.bestmodels,
-    bestModel.top = bestModel.top2,
-    AUC.all.top = AUC.all.melt,
-    cvAUC.list.melt = cvAUC.list.melt2
+    bestModel.top                  = bestModel.top2,
+    AUC.all.top                    = AUC.all.melt,
+    cvAUC.list.melt                = cvAUC.list.melt2,
+    best.auc.list                  = best.auc.list,
+    best.auc.df                    = best.auc.df
   )
   return(to.return)
 }
