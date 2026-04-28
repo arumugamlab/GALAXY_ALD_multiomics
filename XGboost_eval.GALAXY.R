@@ -386,12 +386,7 @@ xgboost_eval <- function(xgboost.object, top) {
   # Derive numeric feature count from "top.X" labels
   bestmodels$no.features <- as.numeric(str_remove_all(bestmodels$features, "top\\."))
   
-  # NOTE: AUC.all.melt does not carry a 'panel' column at this stage.
-  # A 'panel' column is added here as a placeholder so the nested list
-  # structure [[panel]][[omic]] is preserved. When xgboost_eval() is called
-  # per clinical panel (steatosis, inflammation, fibrosis >=2, fibrosis >=3)
-  # the caller should set xgboost.object$panel before passing in, or the
-  # panel label can be injected by the wrapper script (xgboost_best_model).
+  
   if (!is.null(xgboost.object$panel)) {
     bestmodels$panel <- xgboost.object$panel
   } else {
