@@ -278,7 +278,7 @@ This workflow validates the previously selected  feature-reduced  models for **s
 2. **Load Data**  
 - Holdout test set (`df.matrix.test`) and metadata test (`metadata`).
 - Loads pre-trained XGBoost models for fibrosis, inflammation, and steatosis (output of xgboost_train() function).
-- load output of xgboost_eval.GALAXY.R (best.auc.df)
+- load output of xgboost_eval.GALAXY.R (best.auc.df) or output of xgboost_best_model.GALAXY.R
 
 3. **Feature Selection for Testing**  
 - Extracts relevant features (`fibrosis`, `kleiner_numeric`, `inflam_numeric`, `steatosis_numeric`) from metadata.
