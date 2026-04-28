@@ -520,3 +520,24 @@ Each file contains:
 | `rep` | Repetition index (1 to 5) |
 | `Cindex`, `AUC.xyr`, `NRI.xyr`, `n_total` | Evaluation metrics |
 | `best_num` | (Reduced model only) Number of selected features |
+
+## Reproducibility
+
+**R version:** 4.5.1
+
+### Key package versions
+
+| Package        | Version   |
+|----------------|-----------|
+| dplyr          | 1.1.4     |
+| stringr        | 1.5.2     |
+| reshape2       | 1.4.4     |
+| ggplot2        | 4.0.0     |
+| ggrepel        | 0.9.6     |
+| patchwork      | 1.3.2     |
+| ComplexUpset   | 1.3.3     |
+| cvAUC          | 1.1.4     |
+| xgboost        | 1.7.11.1  |
+| caret          | 7.0-1     |
+| pROC           | 1.19.0.1  |
+| Metrics        | 0.1.4     |
