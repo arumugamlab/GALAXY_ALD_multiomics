@@ -63,23 +63,23 @@ test.validation=function(xgboost.result=xgboost.result, panel1=panel, df.test=df
   #Since we did not do feature reducction for eather cofounder or genetic resiscore  have to  add the information here
   ### Confounders
   df.cofounders.risk$features[[1]]<-"top.11"
-  df.cofounders.risk$maxAUC[[1]]<-max(xgboost.result$cvAUC.list$Confounders$cvAUC$fold.AUC)
-  max.auc<-which((xgboost.result$cvAUC.list$Confounders$cvAUC$fold.AUC)==df.cofounders.risk$maxAUC[[1]])
+  df.cofounders.risk$maxAUC[[1]]<-max(xgboost.result$cvAUC.list.all$Confounders$cvAUC$fold.AUC)
+  max.auc<-which((xgboost.result$cvAUC.list.all$Confounders$cvAUC$fold.AUC)==df.cofounders.risk$maxAUC[[1]])
   df.cofounders.risk$model[[1]]<-max.auc
   df.cofounders.risk$fold.name[[1]]<-names(xgboost.result$model_list.all$Confounders)[max.auc]
-  df.cofounders.risk$AUC.cv[[1]]<-xgboost.result$cvAUC.list$Confounders$cvAUC$cvAUC
-  df.cofounders.risk$sd[[1]]<-sd(xgboost.result$cvAUC.list$Confounders$cvAUC$fold.AUC)
+  df.cofounders.risk$AUC.cv[[1]]<-xgboost.result$cvAUC.list.all$Confounders$cvAUC$cvAUC
+  df.cofounders.risk$sd[[1]]<-sd(xgboost.result$cvAUC.list.all$Confounders$cvAUC$fold.AUC)
   df.cofounders.risk$no.features[[1]]<-11
   df.cofounders.risk$omic.feature[[1]]<-"Confounders.top.11"
   
   ### risk
   df.cofounders.risk$features[[2]]<-"top.2"
-  df.cofounders.risk$maxAUC[[2]]<-max(xgboost.result$cvAUC.list$risk$cvAUC$fold.AUC)
-  max.auc<-which((xgboost.result$cvAUC.list$risk$cvAUC$fold.AUC)==df.cofounders.risk$maxAUC[[2]])
+  df.cofounders.risk$maxAUC[[2]]<-max(xgboost.result$cvAUC.list.all$risk$cvAUC$fold.AUC)
+  max.auc<-which((xgboost.result$cvAUC.list.all$risk$cvAUC$fold.AUC)==df.cofounders.risk$maxAUC[[2]])
   df.cofounders.risk$model[[2]]<-max.auc
   df.cofounders.risk$fold.name[[2]]<-names(xgboost.result$model_list.all$risk)[max.auc]
-  df.cofounders.risk$AUC.cv[[2]]<-xgboost.result$cvAUC.list$risk$cvAUC$cvAUC
-  df.cofounders.risk$sd[[2]]<-sd(xgboost.result$cvAUC.list$risk$cvAUC$fold.AUC)
+  df.cofounders.risk$AUC.cv[[2]]<-xgboost.result$cvAUC.list.all$risk$cvAUC$cvAUC
+  df.cofounders.risk$sd[[2]]<-sd(xgboost.result$cvAUC.list.all$risk$cvAUC$fold.AUC)
   df.cofounders.risk$no.features[[2]]<-2
   df.cofounders.risk$omic.feature[[2]]<-"risk.top.2"
   
