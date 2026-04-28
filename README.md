@@ -3,6 +3,7 @@
 ### Overview
 
 This R function `lin_reg_associate()` perform association analysis between omics data and clinical outputs, correcting by given confounders. The function applies linear regression models and corrects for multiple testing, providing summary statistics and visualization plots.
+
 **Function used to generate Figure 1 and Table S3**.
 
 ### Dependencies
@@ -48,7 +49,9 @@ print(Result.associations$plot.volcanoPlot)
 ```
 # 2. Biomarker discovery
 
-We use the [XGBoost](https://doi.org/10.1145/2939672.2939785) machine learning algorithm to derive compact biomarker sets for a given phenotype. We set aside a test set, and tune hyperparameters using `n` times `n`-fold cross-validation on the training set. Once the final hyperparameter set is selected, the optimal model is then evaluated on the test set -- once and only once. Here are the `R` functions that help you with that **Functions used to generate the data needed for Figure 2, Figure S3 and Table S5**.
+We use the [XGBoost](https://doi.org/10.1145/2939672.2939785) machine learning algorithm to derive compact biomarker sets for a given phenotype. We set aside a test set, and tune hyperparameters using `n` times `n`-fold cross-validation on the training set. Once the final hyperparameter set is selected, the optimal model is then evaluated on the test set -- once and only once. 
+
+**Functions used to generate the data needed for Figure 2, Figure S3 and Table S5**.
 
 ## Training XGBoost model with `xgboost_train()`
 
@@ -318,7 +321,9 @@ install.packages(c( "Metrics", "dplyr"))
 
 # 3. Cox regression analysis in the GALA-ALD
 
-To investigates the association between omics features and clinical outcomes of ALD patients (decompensation, mortality, and infection), we perform Cox proportional hazards regression analysis using `cox_regression.R`. **Function used to generate the data needed for Figure 1 and Table S4**.
+To investigates the association between omics features and clinical outcomes of ALD patients (decompensation, mortality, and infection), we perform Cox proportional hazards regression analysis using `cox_regression.R`. 
+
+**Function used to generate the data needed for Figure 1 and Table S4**.
 
 ### Dependencies
 
@@ -359,6 +364,7 @@ Each file contains:
 # 4. Prognostic model construction for clinical outcomes in the GALA-ALD cohort
 
 To construct prediction models for the clinical outcomes in the GALA-ALD, we employ randomforest model in the `mlr` package and make models using `construct_prognostic_model.R`.
+
 **Functions used to generate the data needed for Figure 6, Figure S11 and Table S9**.
 
 ### Dependencies
@@ -435,7 +441,7 @@ All outputs are saved to: `out/rds/`
 We use `evaluate_prognostic_model.R` to evaluates the performance of prognostic models trained using omics data from the GALA-ALD cohort. It compares both:
 - Full models using **all features**
 - Reduced models using **selected top features** (based on cross-validated C-index)
-- 
+
 **Functions used to generate the data needed for Figure 6, Figure 7, Figure S11, Table S9, TableS10**.
 
 Evaluation metrics include:
