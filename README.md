@@ -268,6 +268,9 @@ This workflow evaluates XGBoost feature-reduced models across the four clinical 
 ## Overview
 This workflow validates the previously selected  feature-reduced  models for **steatosis**, **inflammation**, **moderate fibrosis** and  **advanced fibrosis** on the holdout test set. It evaluates the models on test data and calculates performance metrics such as AUC.
 
+**Runtime:** Elapsed time: 30.51 s (wall time), using ~9.5 minutes of CPU time 
+(user: 564.92 s, system: 4.16 s). Parallel execution.
+
 ## Workflow
 1. **Load Required Functions**  
   - Sources `xgboost_eval.GALAXY.R`, which contains the `xgboost_eval()` function.
@@ -275,7 +278,7 @@ This workflow validates the previously selected  feature-reduced  models for **s
 2. **Load Data**  
 - Holdout test set (`df.matrix.test`) and metadata test (`metadata`).
 - Loads pre-trained XGBoost models for fibrosis, inflammation, and steatosis (output of xgboost_train() function).
-- load output of XGboost_best_model.GALAXY.R (best.auc.df)
+- load output of xgboost_eval.GALAXY.R (best.auc.df)
 
 3. **Feature Selection for Testing**  
 - Extracts relevant features (`fibrosis`, `kleiner_numeric`, `inflam_numeric`, `steatosis_numeric`) from metadata.
