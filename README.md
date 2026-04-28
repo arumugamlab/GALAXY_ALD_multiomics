@@ -13,7 +13,7 @@ This R function `lin_reg_associate()` perform association analysis between omics
 Ensure these packages are installed:
 
 ```r
-install.packages(c("dplyr", "ggplot2", "ggrepel", "stringr"))
+install.packages(c("dplyr", "ggplot2", "ggrepel", "stringr", "reshape2"))
 ```
 
 ### Inputs
@@ -68,7 +68,7 @@ This R function implements an XGBoost-based classification pipeline, including f
 Ensure these packages are installed:
 
 ```r
-install.packages(c("dplyr", "xgboost", "caret", "pROC", "Metrics", "reshape2", "ggplot2", "xpectr"))
+install.packages(c("dplyr", "xgboost", "caret", "pROC", "Metrics", "reshape2", "ggplot2", "groupdata2", "xpectr", "cvAUC"))
 ```
 
 ### Inputs
@@ -146,6 +146,17 @@ result$feature.importance.list.top # Feature importance for top models
 
 This R function  `xgboost_eval()` generates performance plots for a trained XGBoost model and outputs relevant performance metrics and visualizations.
 
+### Dependencies
+
+**Runtime:** Elapsed time: 26.61 s (user: 25.65 s, system: 0.37 s)
+
+Ensure these packages are installed:
+
+```r
+install.packages(c("dplyr", "reshape2", "ggplot2", "ggrepel", "stringr", "patchwork"))
+# ComplexUpset is on CRAN:
+install.packages("ComplexUpset")
+```
 
 ### Inputs
 
@@ -169,6 +180,8 @@ This R function  `xgboost_eval()` generates performance plots for a trained XGBo
 | `bestModel.top`                 | DataFrame       | Table summarizing the minimum number of features in the best-performing models. |
 | `AUC.all.top`                   | DataFrame       | Melted data frame of AUC values across top models and features. |
 | `cvAUC.list.melt`               | DataFrame       | Refined data frame of AUC values with features reordered for visualization. |
+| `best.auc.list`                 |  List (Vectors) | Nested list of models meeting ≥99% AUC and minimum feature number. |
+| `best.auc.df`                   | DataFrame       |  Final dataframe with most efficient models per condition. |
 
 ### Summary Code Breakdown
 
@@ -192,15 +205,6 @@ The function performs the following steps:
 5. **Upset Plot Generation:**
    - Uses the `ComplexUpset` package to generate upset plots for feature overlaps across feature reduced models.
 
-### Dependencies
-
-**Runtime:** Elapsed time: 26.61 s (user: 25.65 s, system: 0.37 s)
-
-Ensure these packages are installed:
-
-```r
-install.packages(c("ggplot2", "reshape2", "dplyr", "ComplexUpset", "stringr", "ggrepel"))
-```
 
 ### Example Usage
 
@@ -231,6 +235,13 @@ result$AUC.top.feature.curve
 
 This workflow evaluates XGBoost feature-reduced models across the four clinical panels related to liver disease:**steatosis**, **inflammation**, **moderate fibrosis** and  **advanced fibrosis**. The objective is to identify the optimal number of features, selecting the model that used the fewest number of features while preserving at least 99% of the maximum average AUC.
 
+### Dependencies
+
+Ensure these packages are installed:
+
+```r
+install.packages(c("dplyr", "stringr", "reshape2", "ggplot2", "ggrepel", "patchwork","ComplexUpset","cvAUC"))
+```
 
 ##  Inputs
 
@@ -241,7 +252,6 @@ This workflow evaluates XGBoost feature-reduced models across the four clinical 
 | `xgboost.Inflammation` | XGBoost model object for inflammation ≥2. XGboost_train() output | Input to `xgboost_eval()`   |
 | `xgboost.steatosis`    | XGBoost model object for steatosis ≥2. XGboost_train() output    | Input to `xgboost_eval()`   |
 | `xgboost_eval()`       | Custom function to evaluate model AUCs   | Sources(`xgboost_eval.GALAXY.R`) |
-
 
 
 ##  Outputs
@@ -261,6 +271,7 @@ This workflow evaluates XGBoost feature-reduced models across the four clinical 
 | `sd`          | Standard deviation of AUC                   |
 | `panel`       | Clinical condition panel  (i.e.S>=1,I>=2,F>=2, F>=3 )|
 | `no.features` | Number of features used                     |
+
 
 
 ## Evaluating optimal features-reduced model on the holdout test set with 'XGboost_validation()'
