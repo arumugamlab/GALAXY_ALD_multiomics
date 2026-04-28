@@ -8,7 +8,7 @@ This R function `lin_reg_associate()` perform association analysis between omics
 
 ### Dependencies
 
--Runtime: 32.35 seconds (elapsed), 31.55 user, 0.60 system
+**Runtime:** 32.35 seconds (elapsed), 31.55 user, 0.60 system
 
 Ensure these packages are installed:
 
@@ -62,6 +62,8 @@ We use the [XGBoost](https://doi.org/10.1145/2939672.2939785) machine learning a
 This R function implements an XGBoost-based classification pipeline, including feature reduction and performance evaluation via cross-validation. It supports multiple omics datasets and outputs a range of performance metrics and model details.
 
 ### Dependencies
+
+**Runtime:** 55.1 minutes (elapsed wall time), using ~104 CPU hours  (user: 103.1 h, system: 0.75 h). Parallel execution.
 
 Ensure these packages are installed:
 
