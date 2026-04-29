@@ -138,22 +138,22 @@ xgboost_train <- function(omics,
     # STEP 1 – Subset feature matrix for the current omic layer
     # =========================================================================
     
-    if (!omi %in% c("all", "Microbiome", "Host", "Host.no.PlasmaP")) {
+    if (!omi %in% c("all", "Microbiome", "Host")) {
       omics.features  <- colnames(df.matrix)[startsWith(colnames(df.matrix), omi)]
       df.matrix.omics <- df.matrix[, omics.features, drop = FALSE]
       
     } else if (omi == "all") {
       df.matrix.omics <- df.matrix[, c(
-        which(colnames(df.matrix) %in% fecal.features),
-        which(colnames(df.matrix) %in% plasma.features)
+        which(colnames(df.matrix) %in% Microbiome.features),
+        which(colnames(df.matrix) %in% Host.features)
       )]
       
     } else if (omi == "Microbiome") {
-      df.matrix.omics <- df.matrix[, colnames(df.matrix) %in% fecal.features,
+      df.matrix.omics <- df.matrix[, colnames(df.matrix) %in% Microbiome.features,
                                    drop = FALSE]
       
     } else if (omi == "Host") {
-      df.matrix.omics <- df.matrix[, colnames(df.matrix) %in% plasma.features,
+      df.matrix.omics <- df.matrix[, colnames(df.matrix) %in% Host.features,
                                    drop = FALSE]
     }
     
@@ -450,8 +450,8 @@ xgboost_train <- function(omics,
   # ---------------------------------------------------------------------------
   list(
     loss.list.all               = loss.list,
-    cvAUC.list                  = cvAUC.list,
-    cvAUC.list.top              = cvAUC.list.top,
+    cvAUC.list.all              = cvAUC.list,
+    cvAUC.list.top.all          = cvAUC.list.top,
     feature.importance.list     = feature.importance.list.all,
     feature.importance.list.top = feature.importance.list.top.all,
     feature.importance.list2    = feature.importance.list2,
