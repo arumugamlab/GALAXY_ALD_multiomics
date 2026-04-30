@@ -1,4 +1,5 @@
-# 1. Phenotype-omics associations using `lin_reg_associate()`
+# A. Diagnostic biomarker panel development
+## A.1. Phenotype-omics associations using `lin_reg_associate()`
 
 ### Overview
 
@@ -49,21 +50,21 @@ print(Result.associations$plot.pval)
 print(Result.associations$plot.volcanoPlot)
 
 ```
-# 2. Biomarker discovery
+## A.2. Biomarker discovery
 
 We use the [XGBoost](https://doi.org/10.1145/2939672.2939785) machine learning algorithm to derive compact biomarker sets for a given phenotype. We set aside a test set, and tune hyperparameters using `n` times `n`-fold cross-validation on the training set. Once the final hyperparameter set is selected, the optimal model is then evaluated on the test set -- once and only once. 
 
 **Functions used to generate the data needed for Figure 2, Figure S3 and Table S5**.
 
-## Training XGBoost model with `xgboost_train()`
+### Training XGBoost model with `xgboost_train()`
 
-### Overview
+#### Overview
 
 This R function implements an XGBoost-based classification pipeline, including feature reduction and performance evaluation via cross-validation. It supports multiple omics datasets and outputs a range of performance metrics and model details.
 
 **Runtime:** 55.1 minutes (elapsed wall time), using ~104 CPU hours  (user: 103.1 h, system: 0.75 h). Parallel execution.
 
-### Dependencies
+#### Dependencies
 
 Ensure these packages are installed:
 
@@ -71,7 +72,7 @@ Ensure these packages are installed:
 install.packages(c("dplyr", "xgboost", "caret", "pROC", "Metrics", "reshape2", "ggplot2", "groupdata2", "xpectr", "cvAUC"))
 ```
 
-### Inputs
+#### Inputs
 
 | Parameter        | Type              | Description |
 |-----------------|------------------|-------------|
@@ -88,7 +89,7 @@ install.packages(c("dplyr", "xgboost", "caret", "pROC", "Metrics", "reshape2", "
 | `metadata`      | DataFrame         | Metadata containing sample IDs and feature of interest. |
 | `standards.variables` | Character Vector |Standards variables names to be evaluated individually. (e.g., "TE", "Meld.score", "AST")|
 
-### Outputs
+#### Outputs
 
 The function returns a list of outputs covering model performance, predictions, and feature importance:
 
@@ -116,7 +117,7 @@ The function returns a list of outputs covering model performance, predictions, 
 | `val.labels.ID.out`             | List (Vectors) | Validation set sample IDs per fold. |
 
 
-### Example Usage
+#### Example Usage
 
 ```r
 result <- xgboost_train(
@@ -140,15 +141,15 @@ result$feature.importance.list # Feature importance for full models
 result$feature.importance.list.top # Feature importance for top models
 ```
 
-## Evaluating a trained XGBoost model with `xgboost_eval()`
+### Evaluating a trained XGBoost model with `xgboost_eval()`
 
-### Overview
+#### Overview
 
 This R function  `xgboost_eval()` generates performance plots for a trained XGBoost model and outputs relevant performance metrics and visualizations.
 
 **Runtime:** Elapsed time: 26.61 s (user: 25.65 s, system: 0.37 s)
 
-### Dependencies
+#### Dependencies
 
 Ensure these packages are installed:
 
@@ -158,14 +159,14 @@ install.packages(c("dplyr", "reshape2", "ggplot2", "ggrepel", "stringr", "patchw
 install.packages("ComplexUpset")
 ```
 
-### Inputs
+#### Inputs
 
 | Parameter       | Type                  | Description |
 |-----------------|-----------------------|-------------|
 | `xgboost.object` | Output of `xgboost_train()` | A trained XGBoost model with AUC values and feature importance information. |
 | `top`           | Integer               | Number of top features to include in visualizations. |
 
-### Outputs
+#### Outputs
 
 | Output                          | Type            | Description |
 |---------------------------------|-----------------|-------------|
@@ -183,7 +184,7 @@ install.packages("ComplexUpset")
 | `best.auc.list`                 |  List (Vectors) | Nested list of models meeting ≥99% AUC and minimum feature number. |
 | `best.auc.df`                   | DataFrame       |  Final dataframe with most efficient models per condition. |
 
-### Summary Code Breakdown
+#### Summary Code Breakdown
 
 The function performs the following steps:
 
@@ -206,7 +207,7 @@ The function performs the following steps:
    - Uses the `ComplexUpset` package to generate upset plots for feature overlaps across feature reduced models.
 
 
-### Example Usage
+#### Example Usage
 
 ```r
 # Load trained XGBoost model
@@ -231,9 +232,9 @@ Result.plots <- xgboost_eval(xgboost.object = result, top = 10)
 result$AUC.top.feature.curve
 ```
 
-## Selection of the optimal feature-reduced model with  'Xgboost_best_model.GALAXY.R'
+## A.3. Compact biomarker panel development: selecting optimal feature-reduced models
 
-This workflow evaluates XGBoost feature-reduced models across the four clinical panels related to liver disease:**steatosis**, **inflammation**, **moderate fibrosis** and  **advanced fibrosis**. The objective is to identify the optimal number of features, selecting the model that used the fewest number of features while preserving at least 99% of the maximum average AUC.
+This workflow uses 'Xgboost_best_model.GALAXY.R' to evaluate XGBoost feature-reduced models across the four clinical panels related to liver disease: **steatosis**, **inflammation**, **moderate fibrosis** and  **advanced fibrosis**. The objective is to identify the optimal number of features, selecting the model that used the fewest number of features while preserving at least 99% of the maximum average AUC.
 
 **Function used to generate data needed for Figure S4-S9 and table S5**.
 
@@ -247,7 +248,7 @@ Ensure these packages are installed:
 install.packages(c("dplyr", "stringr", "reshape2", "ggplot2", "ggrepel", "patchwork","ComplexUpset","cvAUC"))
 ```
 
-##  Inputs
+###  Inputs
 
 | Object Name            | Description                              | Notes                       |
 |------------------------|------------------------------------------|-----------------------------|
@@ -258,7 +259,7 @@ install.packages(c("dplyr", "stringr", "reshape2", "ggplot2", "ggrepel", "patchw
 | `xgboost_eval()`       | Custom function to evaluate model AUCs   | Sources(`xgboost_eval.GALAXY.R`) |
 
 
-##  Outputs
+###  Outputs
 
 | Object Name            | Description                                                      |
 |------------------------|------------------------------------------------------------------|
@@ -266,7 +267,7 @@ install.packages(c("dplyr", "stringr", "reshape2", "ggplot2", "ggrepel", "patchw
 | `best.auc.df`          | Final dataframe with most efficient models per condition         |
 | `best.auc.df`          | Final dataframe with most efficient models per condition         |
 
-##  Final Output Format (`best.auc.df`)
+###  Final Output Format (`best.auc.df`)
 
 | Column        | Description                                 |
 |---------------|---------------------------------------------|
@@ -277,10 +278,10 @@ install.packages(c("dplyr", "stringr", "reshape2", "ggplot2", "ggrepel", "patchw
 | `topFeatures.bestmodel.summary` | Summary of selected models|
 
 
-## Evaluating optimal features-reduced model on the holdout test set with 'XGboost_validation()'
+## A.4. Evaluating compact biomarker panels on the holdout test set 
 
-## Overview
-This workflow validates the previously selected  feature-reduced  models for **steatosis**, **inflammation**, **moderate fibrosis** and  **advanced fibrosis** on the holdout test set. It evaluates the models on test data and calculates performance metrics such as AUC.
+### Overview
+This workflow uses 'XGboost_validation()' to validate the previously selected feature-reduced models for **steatosis**, **inflammation**, **moderate fibrosis** and **advanced fibrosis** on the holdout test set. It evaluates the models on test data and calculates performance metrics such as AUC.
 
 **Runtime:** Elapsed time: 30.51 s (wall time), using ~9.5 minutes of CPU time 
 (user: 564.92 s, system: 4.16 s). Parallel execution.
@@ -294,7 +295,7 @@ This workflow validates the previously selected  feature-reduced  models for **s
 install.packages(c( "Metrics", "dplyr"))
 ```
 
-## Workflow
+### Workflow
 1. **Load Required Functions**  
   - Sources `xgboost_eval.GALAXY.R`, which contains the `xgboost_eval()` function.
 
@@ -315,9 +316,9 @@ install.packages(c( "Metrics", "dplyr"))
 5. **Model Validation Execution**  
    - Calls `test.validation()` for each liver disease histopathologycal state (e.g.fibrosis (F>=2)) on the test data.
 
-## Inputs and Outputs
+### Inputs and Outputs
 
-### Inputs
+#### Inputs
 | Variable | Type  | Description |
 |----------|------------|------|
 | `xgboost.model` | Model | XGBoost model object. XGboost_train() output |
@@ -325,23 +326,29 @@ install.packages(c( "Metrics", "dplyr"))
 | `metadata` | Dataframe  | test set metadata containing sample information  |
 | `bestmodels.filt.AUC` | Dataframe |  Pre-filtered list of best models based on AUC. XGboost_best_model.GALAXY.R output |
 
-### Outputs
+#### Outputs
 | Variable | Type |  Description |
 |----------|------------|------|
 | `df.prediction.list` | List |  Predictions on the  test samples |
 | `bestmodels.filt` | Dataframe| Filtered best models with validation AUC |
 
 
-## Usage
+### Usage
 1. Ensure the `xgboost_eval.GALAXY.R` script is available.
 2. Load the required datasets.
 3. Run `test.validation()` with appropriate parameters.
 
-## Output
+### Output
 - A structured validation of the best models based on AUC.
 - Final dataset (`bestmodels.filt`) containing optimal models for fibrosis, inflammation, and steatosis and its performance on the holdout test set.
 
-# 3. Cox regression analysis in the GALA-ALD
+# B. Prevalence-aware evaluation of compact biomarker panels
+
+The workflow used to generate the results and figures are provided in the directory [prevalence_aware_evaluation](https://github.com/arumugamlab/GALAXY_ALD_multiomics/tree/main/performance_vs_prevalence). It contains the relevant input files and the R workflow as an Rmd file.
+
+# C. Prognostic biomarker panel development
+
+## C.1. Cox regression analysis in the GALA-ALD
 
 To investigates the association between omics features and clinical outcomes of ALD patients (decompensation, mortality, and infection), we perform Cox proportional hazards regression analysis using `cox_regression.R`. 
 
@@ -383,7 +390,7 @@ Each file contains:
 | `p`    | p-value of the feature in the Cox model |
 | `outcome` | Outcome type (decompensation, mortality, infection) |
 
-# 4. Prognostic model construction for clinical outcomes in the GALA-ALD cohort
+## C.2. Prognostic model construction for clinical outcomes in the GALA-ALD cohort
 
 To construct prediction models for the clinical outcomes in the GALA-ALD, we employ randomforest model in the `mlr` package and make models using `construct_prognostic_model.R`.
 
@@ -428,7 +435,7 @@ Each file includes:
 | `feature_list` | Feature rankings per CV repetition and fold |
 | `prediction_df` | Prediction results per fold and feature subset |
 
-# 5. Summarize feature selection results for prognostic models
+## C.3. Summarize feature selection results for prognostic models
 
 This script, `check_feature_selection_res.R`, summarizes the results of feature selection from prognostic survival models constructed using `construct_prognostic_model.R`. It identifies the smallest number of features that retain at least 99% of the best model performance (based on mean C-index), and extracts the corresponding feature names and performance metrics.
 **Functions used to generate the data needed for Figure 6, Figure S11 and Table S9**.
@@ -458,7 +465,7 @@ All outputs are saved to: `out/rds/`
 | `df.selected_feature.rds` | Summary table with best number of features and corresponding mean C-index |
 
 
-# 6. Evaluation of prognostic models in the GALA-ALD
+## C.4. Evaluation of prognostic models in the GALA-ALD
 
 We use `evaluate_prognostic_model.R` to evaluates the performance of prognostic models trained using omics data from the GALA-ALD cohort. It compares both:
 - Full models using **all features**
@@ -480,7 +487,7 @@ install.packages(c("tidyverse", "survival", "glmnet"))
 ```
 
 ### Inputs
-### 1. Model Results
+#### 1. Model Results
 | Location | Description |
 |----------|-------------|
 | `out/prognostic_model/*.rds` | Full model objects from `construct_prognostic_model.R` |
@@ -490,12 +497,12 @@ Each file contains:
 - Fold assignments (`rep`, `fold`)
 - Feature set used (`fs = "all"` or selected number)
 
-### 2. Metadata
+#### 2. Metadata
 | File | Description |
 |------|-------------|
 | `data/metadata/GALA_ALD.marker.rds` | Metadata table including `sampleID` used to link predictions to survival outcome |
 
-### 3. Selected Feature Summary
+#### 3. Selected Feature Summary
 | File | Description |
 |------|-------------|
 | `out/rds/selected_feature.rds` | Identifies best feature set for each omics-outcome pair (used for reduced model evaluation) |
@@ -519,11 +526,11 @@ Each file contains:
 | `Cindex`, `AUC.xyr`, `NRI.xyr`, `n_total` | Evaluation metrics |
 | `best_num` | (Reduced model only) Number of selected features |
 
-## Reproducibility
+# D. Reproducibility
 
 **R version:** 4.5.1
 
-### Key package versions
+## Key package versions
 
 | Package        | Version   |
 |----------------|-----------|
