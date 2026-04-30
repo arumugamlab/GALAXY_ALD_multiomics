@@ -50,7 +50,7 @@ print(Result.associations$plot.pval)
 print(Result.associations$plot.volcanoPlot)
 
 ```
-## A.2. Biomarker discovery
+## A.2. Diagnostic biomarker discovery
 
 We use the [XGBoost](https://doi.org/10.1145/2939672.2939785) machine learning algorithm to derive compact biomarker sets for a given phenotype. We set aside a test set, and tune hyperparameters using `n` times `n`-fold cross-validation on the training set. Once the final hyperparameter set is selected, the optimal model is then evaluated on the test set -- once and only once. 
 
@@ -264,7 +264,6 @@ install.packages(c("dplyr", "stringr", "reshape2", "ggplot2", "ggrepel", "patchw
 | Object Name            | Description                                                      |
 |------------------------|------------------------------------------------------------------|
 | `best.auc.list`        | Nested list of models meeting ≥99% AUC and minimum feature number|
-| `best.auc.df`          | Final dataframe with most efficient models per condition         |
 | `best.auc.df`          | Final dataframe with most efficient models per condition         |
 
 ###  Final Output Format (`best.auc.df`)
