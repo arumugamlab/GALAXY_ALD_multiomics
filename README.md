@@ -5,6 +5,8 @@
 
 This R function `lin_reg_associate()` perform association analysis between omics data and clinical outputs, correcting by given confounders. The function applies linear regression models and corrects for multiple testing, providing summary statistics and visualization plots.
 
+To facilitate exploration and reuse of these results, we provide an interactive web resource (https://galaxybiomarkersapp.shinyapps.io/galaxy-biomarkers/) containing summary-level association data for all 3,182 molecular features, including biological annotations, regression results, effect size estimates and directionality, and stratified mean ± standard deviation values across disease groups. This catalogue enables researchers and clinicians to browse, compare and prioritize candidate biomarkers across liver histopathology and clinical outcomes, supporting hypothesis generation, candidate prioritization, and external validation in independent cohorts.
+
 **Function used to generate Figure 1 and Table S3**.
 
 **Runtime:** 32.35 seconds (elapsed), 31.55 user, 0.60 system
@@ -547,3 +549,7 @@ Each file contains:
 | Metrics        | 0.1.4     |
 | groupdata2     | 2.0.5     |
 | xpectr         | 0.4.4     |
+
+
+# Disclaimer
+The complete  data and clinical data are available from the authors upon reasonable request due to the need to maintain patient confidentiality.
